@@ -8,7 +8,7 @@ The currently provided dictionaries are:
 - `main.json`: The main dictionary from the Plover project.
 - `commands.json`: The commands dictionary from the Plover project.
 
-When running locally, you should add "user.json" to the local folder.
+When running locally, you should add your `user.json` to the local folder.
 Then check `dictionary_order.json` to see the order in which the dictionaries are loaded.
 
 ## Demo
