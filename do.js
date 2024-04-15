@@ -50,7 +50,9 @@ function start() {
 
     // allow the user to directly link to a search term
     window.addEventListener('hashchange', function() {
-        $('#search').val(window.location.hash.substring(1));
+        // replace %20 with space
+        let hash = window.location.hash.substring(1).replace(/%20/g, ' ');
+        $('#search').val(hash);
         doSearch(rot);
     }, false);
 
