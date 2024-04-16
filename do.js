@@ -52,6 +52,7 @@ function start() {
     window.addEventListener('hashchange', function() {
         // replace %20 with space
         let hash = window.location.hash.substring(1).replace(/%20/g, ' ');
+        hash = hash.trim();
         $('#search').val(hash);
         doSearch(rot);
     }, false);
@@ -91,7 +92,7 @@ function resultTable() {
 
 function doSearch(dict) {
     start_time = new Date().getTime();
-    term = $('#search').val();
+    term = $('#search').val().trim();
     if (term == prev) {
         return;
     }
@@ -277,18 +278,30 @@ function calculate_similarity(a, b) {
     // replace all k with c
     // replace all b with n
     // replace ohn with on
+    // replace ph with f
     let s2 = new difflib.SequenceMatcher(
       null,
       a.replace(/y/g, 'i').replace(/g/g, 'c').
       replace(/k/g, 'c').replace(/b/g, 'n').
-      replace(/ohn/g, 'on'),
+      replace(/ohn/g, 'on').replace(/ph/g, 'f'),
       b.replace(/y/g, 'i').replace(/g/g, 'c').
       replace(/k/g, 'c').replace(/b/g, 'n').
-      replace(/ohn/g, 'on')
+      replace(/ohn/g, 'on').replace(/ph/g, 'f')
     );
     let ratio3 = s2.ratio() * 0.9;
 
-    return Math.max(ratio1, ratio2, ratio3);
+    let s3 = new difflib.SequenceMatcher(
+      null,
+      a.replace(/y/g, 'i').replace(/j/g, 'g').
+      replace(/k/g, 'c').replace(/b/g, 'n').
+      replace(/ohn/g, 'on').replace(/ph/g, 'f'),
+      b.replace(/y/g, 'i').replace(/j/g, 'g').
+      replace(/k/g, 'c').replace(/b/g, 'n').
+      replace(/ohn/g, 'on').replace(/ph/g, 'f')
+    );
+    let ratio4 = s3.ratio() * 0.9;
+
+    return Math.max(ratio1, ratio2, ratio3, ratio4);
 }
 
 /*

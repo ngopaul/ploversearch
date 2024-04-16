@@ -1,5 +1,5 @@
 [
-  "user.json",
-  "commands.json",
-  "main.json"
+  "steno-dictionaries/dictionaries/dict.json",
+  "steno-dictionaries/dictionaries/numbers.json",
+  "steno-dictionaries/dictionaries/punctuation.json"
 ]
