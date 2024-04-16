@@ -1,0 +1,3 @@
+[submodule "steno-dictionaries"]
+	path = steno-dictionaries
+	url = https://github.com/didoesdigital/steno-dictionaries.git
