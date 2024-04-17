@@ -10,7 +10,7 @@ The dictionaries used are from [didoesdigital/steno-dictionaries](https://github
 
 1. `git clone https://github.com/ngopaul/ploversearch`
 2. `git submodule update --init --remote steno-dictionaries`
-  a. If doing this a second time to update the dictionaries, exclude the `--init`.
+    - If doing this a second time to update the dictionaries, exclude the `--init`.
 3. Open `index.html` in your local browser
 4. Optionally, you can add your `user.json` or any local dictionaries to the local folder.
 5. Then update `dictionary_order.json` to update the order in which the dictionaries are loaded.
