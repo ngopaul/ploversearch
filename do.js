@@ -164,21 +164,54 @@ function addMatchesToTable(dict, r, reject) {
 }
 
 function addTr(r, code, trans) {
-    var cell = $('<td>');
-    var splt = code.split(/\//);
-    var decomposition_hint_so_far = "";
+    let cell = $('<td>');
+    let splt = code.split(/\//);
+    let decomposition_hint_so_far = "";
+    let possible_decompositions = []
+    let possible_hints = []
     $.each(splt, function (idx, val) {
-        var tab = $('<table>');
-        var first = $('<tr>');
-        var second = $('<tr>');
+        let decompositions_and_hints_i = decompose_get_all(val, trans, decomposition_hint_so_far);
+        let decompositions_i = decompositions_and_hints_i[0];
+        let hints_i = decompositions_and_hints_i[1];
+        possible_decompositions.push(decompositions_i);
+        possible_hints.push(hints_i);
+    })
+    // go through each combination of the hints to see which one scores the best with the translation
+    let best_score = 0;
+    let best_decomposition = [];
+    let best_hint = "";
+    let number_of_splits = possible_decompositions.length;
+    let number_of_combinations = 1;
+    for (let i = 0; i < number_of_splits; i++) {
+        number_of_combinations *= possible_decompositions[i].length;
+    }
+    // iterate through all combinations
+    for (let i = 0; i < number_of_combinations; i++) {
+        let combination = [];
+        let combination_hint_parts = [];
+        let temp = i;
+        for (let j = 0; j < number_of_splits; j++) {
+            let index = temp % possible_decompositions[j].length;
+            temp = Math.floor(temp / possible_decompositions[j].length);
+            combination.push(possible_decompositions[j][index]);
+            combination_hint_parts.push(possible_hints[j][index]);
+        }
+        let score = calculate_similarity_parts(combination_hint_parts, trans);
+        if (score > best_score) {
+            best_score = score;
+            best_decomposition = combination;
+            best_hint = combination_hint_parts.join("/");
+        }
+    }
+
+    $.each(splt, function (idx, val) {
+        let tab = $('<table>');
+        let first = $('<tr>');
+        let second = $('<tr>');
         tab.append(first);
         tab.append(second);
-        let decomposition_and_hint = decompose(val, trans, decomposition_hint_so_far);
-        let decomposition = decomposition_and_hint[0];
-        let best_hint = decomposition_and_hint[1];
-        decomposition_hint_so_far += best_hint;
-        $.each(decomposition, function (inner, part) {
-            var td = $('<td>');
+        $.each(best_decomposition[idx], function (inner, part) {
+            let td = $('<td>');
             if (part.strokes.length <= 1)
                 td.text(part.strokes)
                     .addClass('notranslate');
@@ -204,6 +237,7 @@ function addTr(r, code, trans) {
         }
         cell.append(tab);
     });
+
     r.append($('<tr>')
         .append(cell)
         .append($('<td>').text(trans))
@@ -253,6 +287,83 @@ var meanings = [
     {from: "*", to: ""},
     {from: "-", to: ""}
 ];
+
+/**
+ Calculate the similarity between an array with parts of a possible pronunciation, and the translation.
+ @returns int a number between 0 and 1, where 1 means the strings are identical and 0 means they are completely different
+ * @param parts an array with parts of a possible pronunciation
+ * @param trans the translation to match
+ */
+function calculate_similarity_parts(parts, trans) {
+    let single_letter_positions = [];
+    let pronuciation_choices = []
+    let possible_pronunciations = [];
+    let best_score = 0;
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i].length === 1) {
+            single_letter_positions.push(i);
+        }
+    }
+    // generate pronunciation_choices based on 2^single_letter_positions.length
+    for (let i = 0; i < Math.pow(2, single_letter_positions.length); i++) {
+        let positions_of_letters_to_sound_out_individually = [];
+        let temp = i;
+        for (let j = 0; j < single_letter_positions.length; j++) {
+            if (temp % 2 === 1) {
+                positions_of_letters_to_sound_out_individually.push(single_letter_positions[j]);
+            }
+            temp = Math.floor(temp / 2);
+        }
+        let pronunciation_choice = [];
+        let j = 0;
+        while (j < parts.length) {
+            if (positions_of_letters_to_sound_out_individually.includes(j)) {
+                pronunciation_choice.push(parts[j]);
+                j++;
+            } else {
+                // find the next position to sound out individually, combining all the parts in between
+                let k = j + 1;
+                let combined = parts[j];
+                while (k < parts.length && !positions_of_letters_to_sound_out_individually.includes(k)) {
+                    combined += parts[k];
+                    k++;
+                }
+                pronunciation_choice.push(combined);
+                j = k;
+            }
+        }
+        pronuciation_choices.push(pronunciation_choice);
+    }
+
+    // pronounce each pronunciation_choice
+    let pronunciations = [];
+    Metaphone3();
+    for (let i = 0; i < pronuciation_choices.length; i++) {
+        let pronunciation = "";
+        for (let j = 0; j < pronuciation_choices[i].length; j++) {
+            SetWord(pronuciation_choices[i][j]);
+            Encode();
+            pronunciation += GetMetaph();  // TODO use GetAlternateMetaph as well
+        }
+        pronunciations.push(pronunciation);
+    }
+
+    SetWord(trans);
+    Encode();
+    let translation_pronunciation = GetMetaph();
+
+    // calculate the similarity between each pronunciation and the pronunciation of the translation
+    for (let i = 0; i < pronunciations.length; i++) {
+        let pronunciation = pronunciations[i];
+        let sequenceMatcher = new difflib.SequenceMatcher(null, pronunciation, translation_pronunciation);
+        let score = sequenceMatcher.ratio();
+        if (score > best_score) {
+            best_score = score;
+        }
+    }
+
+    return best_score;
+}
 
 /*
 Calculate the phonetic similarity between two strings, a and b, weighting towards if a is a substring of b or vice versa.
@@ -352,15 +463,9 @@ function decompose_helper(code, previous_hint, trans, had_asterisk) {
     for (let i = 0; i < meanings.length; ++i) {
         if (startsWith(code, meanings[i].from)) {
             possible_matches.push(meanings[i]);
-            if (possible_matches[possible_matches.length - 1].to === undefined) {
-                console.log("No hint for meaning: " + meanings[i] + " in code: " + code + " and prevhint: " + previous_hint);
-            }
             possible_ends.push(meanings[i].from.length);
         } else if (startsWith(code.replace('*', ''), meanings[i].from)) {
             possible_matches.push(meanings[i]);
-            if (!possible_matches[possible_matches.length - 1].to === undefined) {
-                console.log("No hint for meaning: " + meanings[i] + " in code: " + code + " and prevhint: " + previous_hint);
-            }
             possible_ends.push(meanings[i].from.length + 1);
         }
     }
@@ -397,9 +502,6 @@ function decompose_helper(code, previous_hint, trans, had_asterisk) {
     for (let i = 0; i < possible_matches.length; ++i) {
         let meaning = possible_matches[i];
         let hint = meaning.to;
-        if (hint === undefined) {
-            console.log("No hint for meaning: " + meaning + " in code: " + code + " and prevhint: " + previous_hint);
-        }
         let end = possible_ends[i];
         let subcalls = decompose_helper(code.substring(end), previous_hint + hint, trans, had_asterisk);
         // base case
@@ -456,6 +558,29 @@ function decompose(code, trans, decomposition_hint_so_far) {
     return [decompositions[best], best_hint];
 }
 
+/*
+Decompose the given code into its parts, using decompose_helper to
+get all possible decompositions of the code.
+Return all decompositions, and the hints for each of them.
+Some tough ones: "District of Columbia", "things", "nevertheless", TODO: "Pony Express", "raspberries"
+ */
+function decompose_get_all(code, trans, decomposition_hint_so_far) {
+    count_recursive_calls = 0;
+    best_hint_so_far = "";
+    if ('' === code) return [];
+    let decompositions = decompose_helper(code, decomposition_hint_so_far, trans, code.includes('*'));
+    let hints = [];
+    for (let i = 0; i < decompositions.length; ++i) {
+        // concatenate all the hints of the decomposition together
+        var hint = "";
+        for (let j = 0; j < decompositions[i].length; ++j) {
+            hint += decompositions[i][j].hint;
+        }
+        hints.push(hint);
+    }
+    return [decompositions, hints];
+}
+
 function rainbow(numOfSteps, step) {
     // Adam Cole, 2011-Sept-14
     var r, g, b;
@@ -494,3 +619,5 @@ var colorFor = {};
 for (var i = 0; i < meanings.length; ++i) {
     colorFor[meanings[i].from] = rainbow(meanings.length, i);
 }
+
+calculate_similarity_parts(["kun", "fes", "n"], "confession");
