@@ -21,5 +21,8 @@ See a demo at [https://ngopaul.github.io/ploversearch/](https://ngopaul.github.i
 
 ## Limitations and To-Dos
 
+Please report any issues or feature requests in the issues tab!
+
 - Only searches through words of length 2 or greater
-- Still doesn't highlight some words correctly based on phonetics
+- Doesn't highlight or mark inversions
+- May need to add some alternate letters when pressing *
