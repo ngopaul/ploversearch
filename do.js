@@ -8,10 +8,6 @@ var codes_used = {};
 function loadDict(dict) {
     $.getJSON(dict, function (dict) {
         $('#status').text('Parsing dictionary...');
-        // {
-        //  'ras': { 'Raspberry': [ 'R-B', 'R*B'] },
-        //  'pon': { 'ponies': [ 'P' ], 'pony': [ 'P-P' ] }
-        // }
         $.each(dict, function (key, val) {
             if (codes_used[key])
                 return true;
@@ -163,6 +159,39 @@ function addMatchesToTable(dict, r, reject) {
     return found;
 }
 
+/**
+ * Add the translation with highlighting to the webpage directly by generating HTML elements
+ * The difficulty here is to highlight the correct word groups, choosing the one that matches
+ * the pronunciation or intent the best. The way this was done is by generating possibilities
+ * for what the highlighting could be, then scoring the possibilities.
+ * Scoring is done by:
+ * 1) using a phonetic algorithm (metaphone3), which is given the greatest weight in scoring
+ * 2) direct spelling similarity, which is given a lesser weight. This breaks ties between
+ *   words like never (could be typed nefr or nevr, which is encoded by metaphone3 the same)
+ *
+ * Some tough ones:
+ * "District of Columbia":
+ * TK	EU	S	/ T	R	EU	BG	T	/ O	F	/ KHR	U	PL	/ KWR	A
+ * d	i	s	/ t	r	i	k	t	/ o	f	/ cl	u	m	/ y	a
+ * "things":
+ * TH	EU	PB	G	S
+ * th	i	n	g	s
+ * "nevertheless":
+ * TPH	*	E	F	R	/ TH	E	L	S
+ * n		e	f	r / th	e	l	s
+ * "Pony Express":
+ * P	OE	PB	/ KWR	EU	/ E	BGS	/ P	R	E	S /
+ * p	oh	n / y	i / e	x / p	r	e	s
+ * "raspberries":
+ * R	A	S	/ PW	E	R	/ KWR	EU	/ -	S
+ * r	a	s / b	e	r / y	i / s
+ * "combination":
+ * K	PW	EU	/ TPH	AEU	GS
+ * k	b	i / n	aa	ion   (not x	w	i / n	aa	ion)
+ * @param r root of webpage to add things to
+ * @param code the code to translate, which has "/" in it to represent a new keypress
+ * @param trans the translation, which is what is actually typed when you press the code
+ */
 function addTr(r, code, trans) {
     let cell = $('<td>');
     let splt = code.split(/\//);
@@ -362,7 +391,10 @@ function calculate_similarity_parts(parts, trans) {
         }
     }
 
-    return best_score;
+    let sequenceMatcher2 = new difflib.SequenceMatcher(null, parts.join(""), trans);
+    let score_addition = sequenceMatcher2.ratio() / 10;
+
+    return best_score + score_addition;
 }
 
 /*
@@ -527,7 +559,6 @@ function decompose_helper(code, previous_hint, trans, had_asterisk) {
 Decompose the given code into its parts, using decompose_helper to
 get all possible decompositions of the code.  Choose the best decomposition
 that matches the translation trans.
-Some tough ones: "District of Columbia", "things", "nevertheless", TODO: "Pony Express", "raspberries"
  */
 function decompose(code, trans, decomposition_hint_so_far) {
     count_recursive_calls = 0;
@@ -561,8 +592,7 @@ function decompose(code, trans, decomposition_hint_so_far) {
 /*
 Decompose the given code into its parts, using decompose_helper to
 get all possible decompositions of the code.
-Return all decompositions, and the hints for each of them.
-Some tough ones: "District of Columbia", "things", "nevertheless", TODO: "Pony Express", "raspberries"
+Return all possible decompositions, and the hints for each of these possibilities.
  */
 function decompose_get_all(code, trans, decomposition_hint_so_far) {
     count_recursive_calls = 0;
