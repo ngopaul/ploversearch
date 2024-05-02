@@ -131,12 +131,12 @@ var m_length = 0; // int
 var m_metaphLength = 0; // int
 
 /**
- * Flag whether or not to encode non-initial vowels.
+ * Flag whether to encode non-initial vowels.
  */
 var m_encodeVowels = false; // boolean
 
 /**
- * Flag whether or not to encode consonants as exactly
+ * Flag whether to encode consonants as exactly
  * as possible.
  */
 var m_encodeExact = false; // boolean
@@ -242,9 +242,9 @@ function Metaphone3(word = null) {
 }
 
 /**
- * @param args
+ * Test the code and print out the results.
  */
-function test_main(args=[]) {
+function test_main() {
   // example code
 
   //m3.SetEncodeVowels(true);
@@ -565,7 +565,7 @@ function GetKeyLength() {
 /**
  * Retrieves maximum number of characters allowed for encoded key.
  *
- * @return short integer representing the length of allocated storage for the key.
+ * @return int representing the length of allocated storage for the key.
  */
 function GetMaximumKeyLength() {
   return MAX_KEY_ALLOCATION;
@@ -584,7 +584,7 @@ function SetEncodeVowels(inEncodeVowels) {
 }
 
 /**
- * Retrieves setting determining whether or not non-initial vowels will be encoded.
+ * Retrieves setting determining whether non-initial vowels will be encoded.
  *
  * @return true if the Metaphone3 object has been set to encode non-initial vowels, false if not.
 */
@@ -595,7 +595,7 @@ function GetEncodeVowels() {
 /**
  * Sets flag that causes Metaphone3 to encode consonants as exactly as possible.
  * This does not include 'S' vs. 'Z', since americans will pronounce 'S' at the
- * at the end of many words as 'Z', nor does it include "CH" vs. "SH". It does cause
+ * end of many words as 'Z', nor does it include "CH" vs. "SH". It does cause
  * a distinction to be made between 'B' and 'P', 'D' and 'T', 'G' and 'K', and 'V'
  * and 'F'.
  *
@@ -606,7 +606,7 @@ function SetEncodeExact(inEncodeExact) {
 }
 
 /**
- * Retrieves setting determining whether or not consonants will be encoded "exactly".
+ * Retrieves setting determining whether consonants will be encoded "exactly".
  *
  * @return true if the Metaphone3 object has been set to encode "exactly", false if not.
 */
@@ -620,8 +620,7 @@ function GetEncodeExact() {
  * @return a character pointer to the primary encoded key
  */
 function GetMetaph() {
-  var primary = m_primary;
-  return primary.toString();
+  return m_primary.toString();
 }
 
 /**
@@ -630,8 +629,7 @@ function GetMetaph() {
  * @return a character pointer to the alternate encoded key
  */
 function GetAlternateMetaph() {
-  var secondary = m_secondary;
-  return secondary.toString();
+  return m_secondary.toString();
 }
 
 /**
@@ -683,7 +681,7 @@ function IsVowelAt(at) {
  * will not be encoded.
  *
  * @param at position, in string to be encoded, of character to start skipping from
- * @return position of next consonant in string to be encoded
+ * @return int position of next consonant in string to be encoded
  */
 function SkipVowels(at) {
   if (at < 0) {
@@ -1042,7 +1040,7 @@ function Encode_Vowels() {
  * Encodes cases where non-initial 'e' is pronounced, taking
  * care to detect unusual cases from the greek.
  * <p>
- * Only executed if non initial vowel encoding is turned on
+ * Only executed if non-initial vowel encoding is turned on
 */
 function Encode_E_Pronounced() {
   // special cases with two pronunciations
@@ -1078,7 +1076,7 @@ function Encode_E_Pronounced() {
 
 /**
  * Tests for cases where non-initial 'o' is not pronounced
- * Only executed if non initial vowel encoding is turned on
+ * Only executed if non-initial vowel encoding is turned on
  *
  * @return true if encoded as silent - no addition to m_metaph key
 */
@@ -1093,7 +1091,7 @@ function O_Silent() {
 
 /**
  * Tests and encodes cases where non-initial 'e' is never pronounced
- * Only executed if non initial vowel encoding is turned on
+ * Only executed if non-initial vowel encoding is turned on
  *
  * @return true if encoded as silent - no addition to m_metaph key
 */
@@ -1119,7 +1117,7 @@ function E_Silent() {
  * is pronounced
  * <p>
  * special cases, mostly from the greek, spanish, japanese,
- * italian, and french words normally having an acute accent.
+ * italian, and French words normally having an acute accent.
  * also, pronouns and articles
  * <p>
  * Many Thanks to ali, QuentinCompson, JeffCO, ToonScribe, Xan,
