@@ -4,6 +4,11 @@ var start_time = 0;
 var end_time = 0;
 var codes_used = {};
 
+var actual_letters = "SSTKPWHRAO*EUFRPBLGTSDZ"
+var visual_letters_unchosen = "🅂🅃🄿🄷🄾🄵🄿🄻🆃🄳" +
+  " 🅂🄺🅆🅁🄾🅁🄱🄶🅂🆉" +
+  " 　　　🄰🄾🄴🅄"
+
 function loadDict(dict) {
   $.getJSON(dict, function (dict) {
     $('#status').text('Parsing dictionary...');
